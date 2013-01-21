@@ -6,6 +6,7 @@
 # Created On Jan 21 2013
 
 
+import sys
 import urllib2
 from HTMLParser import HTMLParser
 
@@ -27,17 +28,28 @@ class AirtelDataUsageParser(HTMLParser):
     def get_page_info(self):
         """Get the HTML data.
         """
-        response = urllib2.urlopen(USAGE_URL)
+        try:
+            response = urllib2.urlopen(USAGE_URL)
+        except urllib2.URLError:
+            print 'Could not connect to Airtel SmartBytes page'
+            sys.exit(-1)
+
         data = response.read()
         self.feed(data)
 
-    def print_usage(self):
+    def print_usage_stats(self):
         """Print the data usage statistics.
         """
-        dsl_number = self._usage_info[:2]
-        balance_quota = self._usage_info[2:5]
-        high_speed_limit = self._usage_info[5:8]
-        days_left = self._usage_info[8:10]
+        try:
+            dsl_number = self._usage_info[:2]
+            balance_quota = self._usage_info[2:5]
+            high_speed_limit = self._usage_info[5:8]
+            days_left = self._usage_info[8:10]
+        except IndexError:
+            print 'Airtel SmartBytes page format changed. ' +\
+                  'Could not find the useful information'
+            sys.exit(-2)
+
         print ' '.join(dsl_number)
         print ' '.join(balance_quota)
         print ' '.join(high_speed_limit)
@@ -63,10 +75,13 @@ class AirtelDataUsageParser(HTMLParser):
             self._usage_info.append(data)
 
 
-def print_usage():
-    parser = AirtelDataUsageParser()
-    parser.print_usage()
+def print_usage_stats():
+    try:
+        parser = AirtelDataUsageParser()
+        parser.print_usage_stats()
+    except KeyboardInterrupt:
+        print 'Exiting...'
 
 
 if __name__ == '__main__':
-    print_usage()
+    print_usage_stats()
